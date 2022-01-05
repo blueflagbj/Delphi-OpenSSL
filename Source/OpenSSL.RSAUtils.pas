@@ -113,7 +113,9 @@ type
     function IsValid :Boolean;
     function Print: string;
     procedure LoadFromFile(const FileName :string);
+    procedure DER_LoadFromFile(const FileName :string); //读取DER格式
     procedure LoadFromStream(AStream :TStream);
+    procedure DER_LoadFromStream(AStream :TStream); //读取DER格式
   end;
 
   TRSAKeyPair = class(TOpenSLLBase)
@@ -394,6 +396,26 @@ begin
   end;
 end;
 
+procedure TX509Cerificate.DER_LoadFromFile(const FileName: string);
+var
+  KeyFile :pBIO;
+ lFileName: RawByteString;
+  pKey :PEVP_PKEY;
+begin
+  KeyFile := BIO_new(BIO_s_file());
+  lFileName := FileName;
+  if BIO_read_filename(KeyFile, PAnsiChar(lFileName)) = 0 then
+    RaiseOpenSSLError('X509 load file error');
+  try
+    FX509 :=  d2i_X509_bio(KeyFile,nil);
+   // FX509 := PEM_read_bio_X509(KeyFile, nil, nil, nil);
+    if not Assigned(FX509) then
+      RaiseOpenSSLError('X509 load certificate error');
+  finally
+    BIO_free(KeyFile);
+  end;
+end;
+
 procedure TX509Cerificate.LoadFromStream(AStream: TStream);
 var
   KeyFile :pBIO;
@@ -408,6 +430,28 @@ begin
     RaiseOpenSSLError('X509 load stream error');
   try
     FX509 := PEM_read_bio_X509(KeyFile, nil, nil, nil);
+    if not Assigned(FX509) then
+      RaiseOpenSSLError('X509 load certificate error');
+  finally
+    BIO_free(KeyFile);
+  end;
+end;
+
+procedure TX509Cerificate.DER_LoadFromStream(AStream: TStream);
+var
+  KeyFile: pBIO;
+begin
+  FreeRSA;
+  FreeX509;
+
+  SetLength(FBuffer, AStream.Size);
+  AStream.ReadBuffer(FBuffer[0], AStream.Size);
+  KeyFile := BIO_new_mem_buf(FBuffer, Length(FBuffer));
+  if KeyFile = nil then
+    RaiseOpenSSLError('X509 load stream error');
+  try
+    FX509 := d2i_X509_bio(KeyFile, nil);
+   // FX509 := PEM_read_bio_X509(KeyFile, nil, nil, nil);
     if not Assigned(FX509) then
       RaiseOpenSSLError('X509 load certificate error');
   finally
