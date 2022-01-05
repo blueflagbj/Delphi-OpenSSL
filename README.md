@@ -1,5 +1,7 @@
 # Delphi OpenSSL Library
-
+## 分支来源于lminuti/Delphi-OpenSSL
+## 更新说明：
+- 增加对DER格式的支持
 [Delphi](http://www.embarcadero.com/products/delphi) wrapper for [OpenSSL](https://openssl.org/).
 
 ## Features
